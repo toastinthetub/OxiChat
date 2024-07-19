@@ -1,50 +1,24 @@
-use std::{
-    //    error::Error,
-    fmt::{self, Display},
-};
+use std::error::Error;
+use std::fmt;
 
 #[derive(Debug)]
-pub enum ArgumentParseError {
-    InvalidArgumentCount,
-    ParseIntError(std::num::ParseIntError),
-    IoError(std::io::Error),
-}
+pub struct InvalidServerAddress;
 
-impl fmt::Display for ArgumentParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ArgumentParseError::InvalidArgumentCount => {
-                write!(f, "Invalid number of arguments provided")
-            }
-            ArgumentParseError::ParseIntError(e) => write!(f, "ParseIntError: {}", e),
-            ArgumentParseError::IoError(e) => write!(f, "IoError: {}", e),
-        }
+impl fmt::Display for InvalidServerAddress {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid server address format")
     }
 }
 
-impl std::error::Error for ArgumentParseError {}
+impl Error for InvalidServerAddress {}
 
-impl From<std::num::ParseIntError> for ArgumentParseError {
-    fn from(err: std::num::ParseIntError) -> Self {
-        ArgumentParseError::ParseIntError(err)
+#[derive(Debug)]
+pub struct InvalidArguments;
+
+impl fmt::Display for InvalidArguments {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid number of arguments")
     }
 }
 
-impl From<std::io::Error> for ArgumentParseError {
-    fn from(err: std::io::Error) -> Self {
-        ArgumentParseError::IoError(err)
-    }
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum ClientError {
-    ArgummentError,
-}
-
-impl Display for ClientError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ClientError::ArgummentError => write!(f, "Error! Client arguments are invalid!"),
-        }
-    }
-}
+impl Error for InvalidArguments {}

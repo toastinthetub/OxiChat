@@ -1,23 +1,45 @@
-use crate::error::{InvalidArguments, InvalidServerAddress};
+use crate::client;
+use crate::utils::{Canvas, Chat, Message};
 use colored::Colorize;
-use crossterm::{
-    cursor::MoveTo,
-    event::{self, Event as TermEvent, KeyCode, KeyModifiers},
-    terminal::{self, Clear, ClearType},
-    QueueableCommand,
-};
+use irc::client::Client;
+
 use irc::{
-    client::{Client, ClientBuilder, Motd},
+    client::{ClientBuilder, Motd},
     context::{ConnectionStatus, Context},
     event::Event,
     event_handler::EventHandler,
 };
 use std::error::Error;
+use std::io::Stdout;
 use std::sync::Arc;
 
-pub const DEFAULTADDR: &str = "irc.freenode.net:6667";
+pub struct Handler;
 
-struct Handler;
+pub struct OxiChat {
+    pub canvas: Canvas,
+    pub client: Client,
+}
+
+impl OxiChat {
+    pub async fn initialize_oxichat(
+        arguments: Vec<String>,
+    ) -> Result<(Self, std::io::Stdout), Box<dyn std::error::Error>> {
+        let client = client::parsearg(arguments).await?;
+
+        let (stdout, canvas) = Canvas::initialize_canvas()?;
+
+        Ok((Self { client, canvas }, stdout))
+    }
+    pub async fn run_oxichat(mut self, stdout: Stdout) -> Result<(), Box<dyn std::error::Error>> {
+        if let Err(e) = self.client.connect().await {
+            Err(Box::new(e))
+            // panic!("Could not connect to server: {}", e);
+        } else {
+            println!("else block!");
+            Ok(())
+        }
+    }
+}
 
 impl EventHandler for Handler {
     fn on_event(&self, ctx: Arc<Context>, event: Event) {
@@ -59,41 +81,5 @@ impl EventHandler for Handler {
                 );
             }
         }
-    }
-}
-
-pub async fn parsearg(args: Vec<String>) -> Result<Client, Box<dyn Error>> {
-    match args.len() {
-        3 => {
-            // oxichat <address:port> <nick>
-            let server_address = args.get(1).unwrap();
-            if server_address.contains(":") {
-                let nickname = args.get(2).unwrap();
-                let mut client =
-                    ClientBuilder::new(server_address, nickname.to_string(), None, None)
-                        .unwrap()
-                        .with_event_handler(Handler)
-                        .await
-                        .unwrap();
-                Ok(client)
-            } else {
-                Err(Box::new(InvalidServerAddress))
-            }
-        }
-        4 => {
-            // oxichat <address> <port> <nick>
-            let address = args.get(1).unwrap();
-            let port = args.get(2).unwrap();
-            let nickname = args.get(3).unwrap();
-
-            let server_address = format!("{}:{}", address, port);
-            let mut client = ClientBuilder::new(&server_address, nickname.to_string(), None, None)
-                .unwrap()
-                .with_event_handler(Handler)
-                .await
-                .unwrap();
-            Ok(client)
-        }
-        _ => Err(Box::new(InvalidArguments)),
     }
 }
